@@ -13,20 +13,42 @@ app.listen(PORT, () => {
 });
 
 app.get("/", (req, res) => {
-  res.send(checkWin(emptyBoard));
+  res.send(board);
 });
 
 app.post("/", (req, res) => {
-  console.log("posted");
-  console.log(req.body);
-  res.send("posted");
+  //update the board
+  board = board.map((row, index) => {
+    if (index == req.body.row)
+      return row.map((value, index) => {
+        if (index == req.body.column) return req.body.player;
+        else return value;
+      });
+    else return row;
+  });
+
+  //update the player
+  if (req.body.player == "x") {
+    player = "o";
+  } else if (req.body.player == "o") {
+    player = "x";
+  }
+
+  //check win
+  const isWon = checkWin(board);
+  res.send({ board: board, player: player, isWon: isWon });
 });
 
-const emptyBoard = [
+let board = [
   ["", "", ""],
-  ["x", "x", "x"],
+  ["", "", ""],
   ["", "", ""],
 ];
+
+let player = "x";
+
+//debug multiple wins
+//if multiple wins, what happens
 
 const checkRow = (row) => {
   let winner = [];
