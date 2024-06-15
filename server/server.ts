@@ -12,11 +12,33 @@ app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
 
+//this route sends the current value of board
 app.get("/", (req, res) => {
   res.send(board);
 });
 
-app.post("/", (req, res) => {
+//this route clears the board and sends its new value
+app.post("/reset", (req, res) => {
+  board = [
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+    ["", "", "", "", "", ""],
+  ];
+  player = "x";
+  isWon = false;
+  res.send({ board: board, player: player, isWon: isWon });
+});
+
+//this route recieves a row value, column value, and player value
+//then, it updates the value of the corresponding square in board
+//then, it updates the value of player
+//then, it checks board for wins
+//then, it send the updated board, player, and the win data
+
+app.post("/squareClick", (req, res) => {
   //update the board
   board = board.map((row, index) => {
     if (index == req.body.row)
@@ -34,21 +56,30 @@ app.post("/", (req, res) => {
     player = "x";
   }
 
-  //check win
-  const isWon = checkWin(board);
+  //checks for wins
+  if (isWon == false) {
+    isWon = checkWin(board);
+  }
+  console.log(board);
   res.send({ board: board, player: player, isWon: isWon });
 });
 
+//initializes and stores the state of the board
 let board = [
-  ["", "", ""],
-  ["", "", ""],
-  ["", "", ""],
+  ["", "", "", "", "", ""],
+  ["", "", "", "", "", ""],
+  ["", "", "", "", "", ""],
+  ["", "", "", "", "", ""],
+  ["", "", "", "", "", ""],
+  ["", "", "", "", "", ""],
 ];
 
+//initializes and stores the state of the player
 let player = "x";
 
-//debug multiple wins
-//if multiple wins, what happens
+let isWon = false;
+
+//below functions check for wins
 
 const checkRow = (row) => {
   let winner = [];
@@ -135,3 +166,8 @@ const checkWin = (board) => {
     checkColumns(board)
   );
 };
+
+//column, row, diag1, diag0
+
+//debug multiple wins
+//if multiple wins, what happens
