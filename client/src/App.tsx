@@ -6,9 +6,6 @@ const Square = (props) => {
   //Before a Square renders, it checks if isWon contains data
   //Then, the Square looks for rowIndex and columnIndex in the data
   //If found, a red Square is rendered
-  //edit: coerce iswon
-  //edit: maybe solve the multiple victories here
-  console.log(props.isWon);
 
   if (
     !!props.isWon &&
@@ -81,39 +78,46 @@ const Board = (/*{ initialBoard }*/) => {
   //A Board component keeps track of the board, player, and win state
   //A Board component returns an array of rows
 
-  const [board, setBoard] = useState([
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "", ""],
-  ]);
+  const [board, setBoard] = useState<string[][] | null>(null);
 
-  const [player, setPlayer] = useState("x");
+  const [player, setPlayer] = useState(null);
 
-  const [isWon, setWon] = useState(false);
+  const [isWon, setWon] = useState(null);
+
+  const [poller, setPoller] = useState(null);
+
+  useEffect(() => {
+    axios.get("http://localhost:3005/").then((response) => {
+      setBoard(response.data.board);
+      setPlayer(response.data.player);
+      setWon(response.data.isWon);
+    });
+    setTimeout(() => {
+      setPoller(poller + 1);
+    }, 1000);
+  }, [poller]);
 
   //row, index
   return (
     <div>
-      {board.map((row, index) => {
-        return (
-          <Row
-            //A row contains key, a mandatory prop, and rowIndex, uniquely identifying each row
-            key={index}
-            rowIndex={index}
-            row={row}
-            //The remaining props are passed down and used by the Square component
-            board={board}
-            setBoard={setBoard}
-            player={player}
-            setPlayer={setPlayer}
-            setWon={setWon}
-            isWon={isWon}
-          ></Row>
-        );
-      })}
+      {board &&
+        board.map((row, index) => {
+          return (
+            <Row
+              //A row contains key, a mandatory prop, and rowIndex, uniquely identifying each row
+              key={index}
+              rowIndex={index}
+              row={row}
+              //The remaining props are passed down and used by the Square component
+              board={board}
+              setBoard={setBoard}
+              player={player}
+              setPlayer={setPlayer}
+              setWon={setWon}
+              isWon={isWon}
+            ></Row>
+          );
+        })}
 
       <button
         //This button sends a post request to the /reset route on the server.
