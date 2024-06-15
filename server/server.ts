@@ -14,7 +14,7 @@ app.listen(PORT, () => {
 
 //this route sends the current value of board
 app.get("/", (req, res) => {
-  res.send(board);
+  res.send({ board: board, player: player, isWon: isWon });
 });
 
 //this route clears the board and sends its new value
