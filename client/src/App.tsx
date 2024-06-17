@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+
 import axios from "axios";
 import "./App.css";
 
@@ -15,9 +17,17 @@ const Square = (props) => {
     )
   ) {
     return (
-      <button style={{ backgroundColor: "brown", width: 200, height: 200 }}>
-        <div style={{ fontSize: 80 }}>{props.value}</div>
-      </button>
+      <motion.div
+        animate={{
+          scale: [1, 2, 2, 1, 1],
+          rotate: [0, 0, 270, 270, 0],
+          borderRadius: ["20%", "20%", "50%", "50%", "20%"],
+        }}
+      >
+        <button style={{ backgroundColor: "brown", width: 200, height: 200 }}>
+          <div style={{ fontSize: 80 }}>{props.value}</div>
+        </button>
+      </motion.div>
     );
   }
 
@@ -28,6 +38,15 @@ const Square = (props) => {
   //Then, the states of Board, Player, and isWon are updated
 
   return (
+    /*<motion.div
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+      key={props.board}
+    >
+    </motion.div>
+    */
+
     <button
       style={{ backgroundColor: "lightblue", width: 200, height: 200 }}
       onClick={() => {
