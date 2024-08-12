@@ -1,19 +1,53 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-
 import axios from "axios";
 import "./App.css";
 
-const Square = (props) => {
-  //Before a Square renders, it checks if isWon contains data
-  //Then, the Square looks for rowIndex and columnIndex in the data
-  //If found, a red Square is rendered
+type Player = "x" | "o";
+type Board = string[][];
+type WinState = [number, number][] | "draw" | false;
+
+interface SquareProps {
+  rowIndex: number;
+  columnIndex: number;
+  value: string;
+  board: Board;
+  setBoard: React.Dispatch<React.SetStateAction<Board | null>>;
+  player: Player;
+  setPlayer: React.Dispatch<React.SetStateAction<Player | null>>;
+  setWon: React.Dispatch<React.SetStateAction<WinState | null>>;
+  isWon: WinState;
+}
+
+interface RowProps {
+  row: string[];
+  rowIndex: number;
+  board: Board;
+  setBoard: React.Dispatch<React.SetStateAction<Board | null>>;
+  player: Player;
+  setPlayer: React.Dispatch<React.SetStateAction<Player | null>>;
+  setWon: React.Dispatch<React.SetStateAction<WinState | null>>;
+  isWon: WinState;
+}
+
+const Square: React.FC<SquareProps> = (props) => {
+  const {
+    rowIndex,
+    columnIndex,
+    value,
+    board,
+    setBoard,
+    player,
+    setPlayer,
+    setWon,
+    isWon,
+  } = props;
 
   if (
-    !!props.isWon &&
-    !!props.isWon.find(
-      (element) =>
-        element[0] === props.rowIndex && element[1] === props.columnIndex
+    isWon &&
+    isWon !== "draw" &&
+    isWon.find(
+      (element) => element[0] === rowIndex && element[1] === columnIndex
     )
   ) {
     return (
@@ -23,87 +57,64 @@ const Square = (props) => {
           rotate: [0, 0, 270, 270, 0],
           borderRadius: ["20%", "20%", "50%", "50%", "20%"],
         }}
+        className="square won"
       >
-        <button style={{ backgroundColor: "brown", width: 200, height: 200 }}>
-          <div style={{ fontSize: 80 }}>{props.value}</div>
-        </button>
+        <div className="square-content">{value}</div>
       </motion.div>
     );
   }
 
-  //if isWon did not contain data, a blue Square is rendered, with
-  //the ability to send a post request to the squareClick route containing
-  //row, column, and player data
-  //After a post request is sent, the server responds with the updated board, player, and the win data
-  //Then, the states of Board, Player, and isWon are updated
-
   return (
-    /*<motion.div
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      key={props.board}
-    >
-    </motion.div>
-    */
-
     <button
-      style={{ backgroundColor: "lightblue", width: 200, height: 200 }}
+      className="square"
       onClick={() => {
         axios
           .post("http://localhost:3005/squareClick", {
-            row: props.rowIndex,
-            column: props.columnIndex,
-            player: props.player,
+            row: rowIndex,
+            column: columnIndex,
+            player: player,
           })
           .then((response) => {
-            props.setBoard(response.data.board);
-            props.setPlayer(response.data.player);
-            props.setWon(response.data.isWon);
+            setBoard(response.data.board);
+            setPlayer(response.data.player);
+            setWon(response.data.isWon);
           });
       }}
     >
-      <div style={{ fontSize: 80 }}>{props.value}</div>
+      <div className="square-content">{value}</div>
     </button>
   );
 };
 
-const Row = (props) => {
-  //A Row component returns an array of Square components.
+const Row: React.FC<RowProps> = (props) => {
+  const { row, rowIndex, board, setBoard, player, setPlayer, setWon, isWon } =
+    props;
+
   return (
-    //Flexbox aligns Square components in a row
-    <div style={{ display: "flex" }}>
-      {props.row.map((value, index) => {
-        return (
-          <Square
-            key={index}
-            columnIndex={index}
-            rowIndex={props.rowIndex}
-            value={value}
-            board={props.board}
-            setBoard={props.setBoard}
-            player={props.player}
-            setPlayer={props.setPlayer}
-            setWon={props.setWon}
-            isWon={props.isWon}
-          ></Square>
-        );
-      })}
+    <div className="row">
+      {row.map((value, index) => (
+        <Square
+          key={index}
+          columnIndex={index}
+          rowIndex={rowIndex}
+          value={value}
+          board={board}
+          setBoard={setBoard}
+          player={player}
+          setPlayer={setPlayer}
+          setWon={setWon}
+          isWon={isWon}
+        />
+      ))}
     </div>
   );
 };
 
-const Board = (/*{ initialBoard }*/) => {
-  //A Board component keeps track of the board, player, and win state
-  //A Board component returns an array of rows
-
-  const [board, setBoard] = useState<string[][] | null>(null);
-
-  const [player, setPlayer] = useState(null);
-
-  const [isWon, setWon] = useState(null);
-
-  const [poller, setPoller] = useState(null);
+const Board: React.FC = () => {
+  const [board, setBoard] = useState<Board | null>(null);
+  const [player, setPlayer] = useState<Player | null>(null);
+  const [isWon, setWon] = useState<WinState | null>(null);
+  const [poller, setPoller] = useState<number | null>(null);
 
   useEffect(() => {
     axios.get("http://localhost:3005/").then((response) => {
@@ -111,37 +122,33 @@ const Board = (/*{ initialBoard }*/) => {
       setPlayer(response.data.player);
       setWon(response.data.isWon);
     });
-    setTimeout(() => {
-      setPoller(poller + 1);
+    const timer = setTimeout(() => {
+      setPoller((prev) => (prev !== null ? prev + 1 : 0));
     }, 1000);
+    return () => clearTimeout(timer);
   }, [poller]);
 
-  //row, index
   return (
-    <div>
+    <div className="board-container">
       {board &&
-        board.map((row, index) => {
-          return (
-            <Row
-              //A row contains key, a mandatory prop, and rowIndex, uniquely identifying each row
-              key={index}
-              rowIndex={index}
-              row={row}
-              //The remaining props are passed down and used by the Square component
-              board={board}
-              setBoard={setBoard}
-              player={player}
-              setPlayer={setPlayer}
-              setWon={setWon}
-              isWon={isWon}
-            ></Row>
-          );
-        })}
+        board.map((row, index) => (
+          <Row
+            key={index}
+            rowIndex={index}
+            row={row}
+            board={board}
+            setBoard={setBoard}
+            player={player}
+            setPlayer={setPlayer}
+            setWon={setWon}
+            isWon={isWon}
+          />
+        ))}
+
+      {isWon === "draw" && <div className="draw-message">It's a draw!</div>}
 
       <button
-        //This button sends a post request to the /reset route on the server.
-        //Which responds with an empty board, emp
-        //It also resets isWon to false
+        className="reset-button"
         onClick={() => {
           axios.post("http://localhost:3005/reset").then((response) => {
             setBoard(response.data.board);
@@ -157,19 +164,9 @@ const Board = (/*{ initialBoard }*/) => {
 };
 
 function App() {
-  /*
-  const [initialBoard]; state
-  useEffect();
-  axios.get("http://localhost:3005/game").then((response) => {
-     setBoard(response.data);
-   });
-
-  if (!initialBoard) return <div>loading</div>;
-
-  */
   return (
     <>
-      <Board /*intialBoard={todo}*/></Board>
+      <Board />
     </>
   );
 }

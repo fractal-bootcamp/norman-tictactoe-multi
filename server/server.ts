@@ -39,7 +39,7 @@ app.post("/reset", (req, res) => {
 //then, it send the updated board, player, and the win data
 
 app.post("/squareClick", (req, res) => {
-  //update the board
+  // update the board
   board = board.map((row, index) => {
     if (index == req.body.row)
       return row.map((value, index) => {
@@ -49,17 +49,19 @@ app.post("/squareClick", (req, res) => {
     else return row;
   });
 
-  //update the player
-  if (req.body.player == "x") {
-    player = "o";
-  } else if (req.body.player == "o") {
-    player = "x";
+  // update the player
+  player = req.body.player === "x" ? "o" : "x";
+
+  // check for wins or draw
+  if (!isWon) {
+    const winState = checkWin(board);
+    if (winState === "draw") {
+      isWon = "draw";
+    } else {
+      isWon = winState;
+    }
   }
 
-  //checks for wins
-  if (isWon == false) {
-    isWon = checkWin(board);
-  }
   console.log(board);
   res.send({ board: board, player: player, isWon: isWon });
 });
@@ -86,6 +88,8 @@ const checkRow = (row) => {
   for (let i = 0; i < row.length - 1; i++) {
     if (row[i] == row[i + 1] && row[i] != "") {
       winner.push(i);
+    } else {
+      winner = [];
     }
     if (winner.length == row.length - 1) {
       winner.push(i + 1);
@@ -97,8 +101,9 @@ const checkRow = (row) => {
 
 const checkRows = (board) => {
   for (let i = 0; i < board.length; i++) {
-    if (checkRow(board[i]) != false) {
-      return checkRow(board[i]).map((element) => [i, element]);
+    const rowWin = checkRow(board[i]);
+    if (rowWin) {
+      return rowWin.map((element) => [i, element]);
     }
   }
   return false;
@@ -110,6 +115,8 @@ const checkColumns = (board) => {
     for (let j = 0; j < board.length - 1; j++) {
       if (board[j][i] == board[j + 1][i] && board[j][i] != "") {
         winner.push([j, i]);
+      } else {
+        winner = [];
       }
       if (winner.length == board.length - 1) {
         winner.push([j + 1, i]);
@@ -122,51 +129,56 @@ const checkColumns = (board) => {
 
 const checkDiag0 = (board) => {
   let winner = [];
-  for (let i = 0; i < board[0].length - 1; i++) {
-    for (let j = 0; j < board.length - 1; j++) {
-      if (i == j && board[j][i] == board[j + 1][i + 1] && board[j][i] != "") {
-        winner.push([i, j]);
-      }
-      if (winner.length == board.length - 1) {
-        winner.push([j + 1, i + 1]);
-        return winner;
-      }
+  for (let i = 0; i < board.length - 1; i++) {
+    if (board[i][i] == board[i + 1][i + 1] && board[i][i] != "") {
+      winner.push([i, i]);
+    } else {
+      winner = [];
+    }
+    if (winner.length == board.length - 1) {
+      winner.push([i + 1, i + 1]);
+      return winner;
     }
   }
-
   return false;
 };
 
 const checkDiag1 = (board) => {
   let winner = [];
-  for (let i = 0; i < board[0].length - 1; i++) {
-    for (let j = 0; j < board.length + 1; j++) {
-      if (
-        i + j == board.length - 1 &&
-        board[j][i] == board[j - 1][i + 1] &&
-        board[j][i] != ""
-      ) {
-        winner.push([j, i]);
-      }
-      if (winner.length == board.length - 1) {
-        winner.push([j - 1, i + 1]);
-        return winner;
-      }
+  for (let i = 0; i < board.length - 1; i++) {
+    if (
+      board[i][board.length - 1 - i] == board[i + 1][board.length - 2 - i] &&
+      board[i][board.length - 1 - i] != ""
+    ) {
+      winner.push([i, board.length - 1 - i]);
+    } else {
+      winner = [];
+    }
+    if (winner.length == board.length - 1) {
+      winner.push([i + 1, board.length - 2 - i]);
+      return winner;
     }
   }
-
   return false;
 };
 
-const checkWin = (board) => {
-  return (
-    checkDiag0(board) ||
-    checkDiag1(board) ||
-    checkRows(board) ||
-    checkColumns(board)
-  );
+const checkDraw = (board) => {
+  return board.every((row) => row.every((cell) => cell !== ""));
 };
 
+const checkWin = (board) => {
+  const diag0 = checkDiag0(board);
+  const diag1 = checkDiag1(board);
+  const rows = checkRows(board);
+  const columns = checkColumns(board);
+
+  if (diag0) return diag0;
+  if (diag1) return diag1;
+  if (rows) return rows;
+  if (columns) return columns;
+  if (checkDraw(board)) return "draw";
+  return false;
+};
 //column, row, diag1, diag0
 
 //debug multiple wins
